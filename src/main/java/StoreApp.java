@@ -1,6 +1,5 @@
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.math.BigDecimal;
+import java.sql.*;
 import java.util.Scanner;
 
 public class StoreApp {
@@ -9,7 +8,7 @@ public class StoreApp {
         Statement create = connection.createStatement();
         create.execute("create table store " +
                 "(" +
-                " id integer primary key," +
+                " id integer primary key auto_increment," +
                 " name varchar(25)," +
                 " category enum('beer', 'whisky', 'vodka', 'wine')," +
                 " voltage decimal(4,1)," +
@@ -29,16 +28,116 @@ public class StoreApp {
         drop.execute("drop table store");
         drop.close();
     }
+
+    static void showRowsFromStoreTable(Connection connection) throws SQLException {
+        Statement select = connection.createStatement();
+        ResultSet set = select.executeQuery("select * from store");
+        while(set.next()){
+            int id = set.getInt("id");
+            String name = set.getString("name");
+            String category = set.getString("category");
+            BigDecimal voltage = set.getBigDecimal("voltage");
+            BigDecimal capacity = set.getBigDecimal("capacity");
+            System.out.println(id +" " + name +" " + category + " " + voltage);
+        }
+        set.close();
+        select.close();
+    }
+
+    static void insertNewRowIntoStoreTable(Connection connection) throws SQLException {
+        System.out.println("Wpisz nazwę:");
+        String name = scanner.nextLine();
+        System.out.println("Wpisz kategorię:");
+        String category = scanner.nextLine();
+        System.out.println("Wpisz zawartość alkoholu:");
+        float voltage = scanner.nextFloat();
+        System.out.println("Wpisz pojemność:");
+        float capacity = scanner.nextFloat();
+
+        PreparedStatement insert = connection.prepareStatement("insert into " +
+                "store(`name`,`category`,`voltage`,`capacity`) " +
+                "values(?, ?, ?, ?);");
+        insert.setString(1, name);
+        insert.setString(2, category);
+        insert.setBigDecimal(4, new BigDecimal(capacity));
+        insert.setBigDecimal(3, new BigDecimal(voltage));
+        int count = insert.executeUpdate();
+        System.out.println(count == 1 ? "Sukces" : "Błąd");
+        insert.close();
+    }
+
+    static void selectByIdFromStoreTable(Connection connection) throws SQLException {
+        System.out.println("Wpisz id:");
+        String id = scanner.nextLine();
+        PreparedStatement select = connection.prepareStatement("select * from store where id = ?");
+        select.setInt(1, Integer.parseInt(id));
+        ResultSet set = select.executeQuery();
+        while(set.next()){
+            int i = set.getInt("id");
+            String name = set.getString("name");
+            System.out.println(i + " " + name);
+        }
+    }
+    static void insertIntoResultSet(Connection connection) throws SQLException {
+        Statement select = connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE,ResultSet.CONCUR_UPDATABLE);
+        ResultSet set = select.executeQuery("select * from store");
+        while(set.next()){
+            String category = set.getString("category");
+            if ("wine".equals(category)){
+                System.out.println("Wstaw nowy rekord:");
+                System.out.println("Podaj nazwę:");
+                String name = scanner.nextLine();
+                System.out.println("Podaj zawartość:");
+                float voltage = scanner.nextFloat();
+                System.out.println("Podaj objętość:");
+                float capacity= scanner.nextFloat();
+                scanner.nextLine();//czyszczenie bufora klawiatury
+
+                //wstawiamy nowy rekord
+                set.moveToInsertRow();
+                set.updateString("name", name);
+                set.updateBigDecimal("voltage", new BigDecimal(voltage));
+                set.updateBigDecimal("capacity", new BigDecimal(capacity));
+                set.updateString("category", "wine");
+                set.insertRow();
+                set.close();
+                return;
+            }
+        }
+    }
+
+    static void deleteRowFromStoreTable(Connection connection) throws SQLException {
+        System.out.println("Podaj id usuwanego wiersza:");
+        int id = scanner.nextInt();
+        scanner.nextLine();
+        Statement delete = connection.createStatement(ResultSet.TYPE_SCROLL_SENSITIVE, ResultSet.CONCUR_UPDATABLE);
+        ResultSet set = delete.executeQuery("Select * from store");
+        while(set.next()){
+            //napisać warunek czy id bieżącego to id wczytane z klawiatury
+            if (id == set.getInt("id")){
+                set.deleteRow();
+                set.close();
+                return;
+            }
+        }
+    }
     static int menu(){
         System.out.println("1. Utwórz tabelę");
-        System.out.println("2. Dodaj kilka rekodrów");
+        System.out.println("2. Dodaj kilka rekordów");
         System.out.println("3. Usuń tabelę");
+        System.out.println("4. Wyświetl wiersze z tabeli");
+        System.out.println("5. Wpisz i dodaj wiersz do tabeli");
+        System.out.println("6. Znajdź wiersz o numerze");
+        System.out.println("7. Dodaj nowe wino jeśli jest w tabeli wino");
+        System.out.println("8. Usuń wiersz");
         System.out.println("0. Wyjście z programu");
         while(!scanner.hasNextInt()){
             System.out.println("Wpisz numer polecenia z menu!!!");
             scanner.nextLine(); //wyczyszczenie zawartości bufora klawiatury
         }
-        return scanner.nextInt();
+        int option = scanner.nextInt();
+        scanner.nextLine();
+        return option;
     }
     public static void main(String[] args) throws SQLException {
         Connection connection = JdbcConnection.MYSQL_JAVA6.getConnection();
@@ -53,6 +152,21 @@ public class StoreApp {
                     break;
                 case 3:
                     deleteStoreTable(connection);
+                    break;
+                case 4:
+                    showRowsFromStoreTable(connection);
+                    break;
+                case 5:
+                    insertNewRowIntoStoreTable(connection);
+                    break;
+                case 6:
+                    selectByIdFromStoreTable(connection);
+                    break;
+                case 7:
+                    insertIntoResultSet(connection);
+                    break;
+                case 8:
+                    deleteRowFromStoreTable(connection);
                     break;
                 case 0:
                     return;
