@@ -11,8 +11,8 @@ public class StoreApp {
                 "(" +
                 " id integer primary key," +
                 " name varchar(25)," +
-                " category enum(beer, whisky, vodka, wine)," +
-                " voltage decimal(4,1)" +
+                " category enum('beer', 'whisky', 'vodka', 'wine')," +
+                " voltage decimal(4,1)," +
                 " capacity decimal(4,3)" +
                 ");"
         );
@@ -40,18 +40,19 @@ public class StoreApp {
         }
         return scanner.nextInt();
     }
-    public static void main(String[] args) {
+    public static void main(String[] args) throws SQLException {
+        Connection connection = JdbcConnection.MYSQL_JAVA6.getConnection();
         while(true){
             final int option = menu();
             switch(option){
                 case 1:
-
+                    createStoreTable(connection);
                     break;
                 case 2:
-
+                    insertRowsIntoStoreTable(connection);
                     break;
                 case 3:
-
+                    deleteStoreTable(connection);
                     break;
                 case 0:
                     return;
