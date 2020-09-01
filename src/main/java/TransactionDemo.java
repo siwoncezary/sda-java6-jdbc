@@ -39,6 +39,7 @@ public class TransactionDemo {
         PreparedStatement transfer =
                 connection.prepareStatement("update account set points = ?" +
                         " where id = ?");
+        //Można też skrócić update korzystając z referencji - "update account set points = points - ? where id = ?"
         transfer.setInt(1, sourcePoints - pointsToTransfer);
         transfer.setInt(2, 1);
         transfer.executeUpdate();
@@ -70,6 +71,5 @@ public class TransactionDemo {
         System.out.println("Obecny stan konta 1: " + getPointsFromAccount(connection, 1));
         System.out.println("Obecny stan konta 2: " + getPointsFromAccount(connection, 2));
         connection.close();
-
     }
 }
